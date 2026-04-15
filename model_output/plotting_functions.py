@@ -63,6 +63,17 @@ def make_face(ds, face, var, cmin, cmax,colorscale="Viridis"):
     y_edges = grid_edges_from_centers(ds["YC"].values)
     z_edges = grid_edges_from_centers(ds["Z"].values)
 
+    cmid = None
+    if colorscale == "balance" or colorscale == "balance_r":
+        # For diverging colormaps, set cmin and cmax to be symmetric around zero (this is necessary for the colormap to be centered around zero)
+        abs_max = max(abs(cmin), abs(cmax))
+        cmin = -abs_max
+        cmax = abs_max
+        cmid = 0 # set cmid to zero
+    elif (colorscale == "ice" or colorscale == "ice_r" or colorscale == "blues" or colorscale == "blues_r") and cmax >0:
+        # Set cmin = 0 for the monoscale supercooling colormaps to ensure that only supercooled values are colored
+        cmin = 0
+
     return go.Surface(
         x=x_face,
         y=y_face,
@@ -71,6 +82,7 @@ def make_face(ds, face, var, cmin, cmax,colorscale="Viridis"):
         colorscale=colorscale,
         cmin=cmin,
         cmax=cmax,
+        cmid=cmid,
         showscale=(face=="top") # this ensures that only one colorbar is shown
     )
 
