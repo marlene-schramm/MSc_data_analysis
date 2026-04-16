@@ -2,6 +2,8 @@
 import numpy as np
 import plotly.graph_objects as go
 
+### Surface animation function for 2D fields
+
 def surface_animation(ds, var, time_dim, x_dim, y_dim, colorscale):
     ''' Create an animated surface plot for a given variable showing its time evolution.'''
     # Extract coordinate arrays
