@@ -4,29 +4,28 @@ import plotly.graph_objects as go
 
 ### Surface animation function for 2D fields
 
-def surface_animation(ds, var, time_dim, x_dim, y_dim, colorscale):
+def surface_animation(ds, var, model_run, time_dim, x_dim, y_dim, colorscale):
     ''' Create an animated surface plot for a given variable showing its time evolution.'''
     # Extract coordinate arrays
     x_coords = ds[x_dim].values
     y_coords = ds[y_dim].values
 
-    # Determine global min/max (Compute to get actual floats from Dask)
-    var_min = float(ds[var].min().compute())
-    var_max = float(ds[var].max().compute())
+    # Determine global min/max
+    var_min = float(ds[var].min())
+    var_max = float(ds[var].max())
 
     frames = []
     time_values = ds[time_dim].values
     num_frames = len(time_values)
 
     for i in range(num_frames):
-        # Simple integer label
+        # plot label for each time step (currently simple integer)
         time_label = str(i + 1)
 
-        # FIX 1: Use .isel() for integer indexing, not .sel()
+        # Select Data slice for current timestep
         frame_data_slice = ds[var].isel({time_dim: i})
         
-        # FIX 2: Compute the Dask array to get actual numpy data
-        z_data = frame_data_slice.compute().values
+        z_data = frame_data_slice.values
         
         trace = go.Contour(
             z=z_data,
@@ -86,7 +85,7 @@ def surface_animation(ds, var, time_dim, x_dim, y_dim, colorscale):
             len=0.9,
             x=0.1,
             y=0
-        )]
+        )]  
     )
 
     fig.show(renderer="browser")
