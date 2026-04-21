@@ -93,7 +93,7 @@ def surface_animation(ds, var, model_run, time_dim, x_dim, y_dim, colorscale):
 
 ### Functions for 3D block animation with Plotly
 
-def make_face(ds, face, var, cmin, cmax,colorscale="Viridis"):
+def make_face(ds, face, var, cmin, cmax, cmid,colorscale="Viridis"):
     """
     Create a Plotly surface for one cube face.
 
@@ -152,17 +152,6 @@ def make_face(ds, face, var, cmin, cmax,colorscale="Viridis"):
     x_edges = grid_edges_from_centers(ds["XC"].values)
     y_edges = grid_edges_from_centers(ds["YC"].values)
     z_edges = grid_edges_from_centers(ds["Z"].values)
-
-    cmid = None
-    if colorscale == "balance" or colorscale == "balance_r":
-        # For diverging colormaps, set cmin and cmax to be symmetric around zero (this is necessary for the colormap to be centered around zero)
-        abs_max = max(abs(cmin), abs(cmax))
-        cmin = -abs_max
-        cmax = abs_max
-        cmid = 0 # set cmid to zero
-    elif (colorscale == "ice" or colorscale == "ice_r" or colorscale == "blues" or colorscale == "blues_r") and cmax >0:
-        # Set cmin = 0 for the monoscale supercooling colormaps to ensure that only supercooled values are colored
-        cmin = 0
 
     return go.Surface(
         x=x_face,
@@ -291,12 +280,23 @@ def cube_time_evol(ds, var, model_run="", colorscale="Viridis", grid = True, qua
     # Global color limits -> all faces can have the same color scale
     cmin = np.min(ds[var].values)
     cmax = np.max(ds[var].values)
+    cmid = None
+
+    if colorscale == "balance" or colorscale == "balance_r":
+        # For diverging colormaps, set cmin and cmax to be symmetric around zero (this is necessary for the colormap to be centered around zero)
+        abs_max = max(abs(cmin), abs(cmax))
+        cmin = -abs_max
+        cmax = abs_max
+        cmid = 0 # set cmid to zero
+    elif (colorscale == "ice" or colorscale == "ice_r" or colorscale == "blues" or colorscale == "blues_r") and cmax >0:
+        # Set cmin = 0 for the monoscale supercooling colormaps to ensure that only supercooled values are colored
+        cmin = 0
 
     faces = ["top", "bottom", "front", "back", "right", "left"]
 
     # FIRST FRAME
     # For timestep 0, create surfaces for all faces
-    face_data = [make_face(ds.isel(time=0), f, var, cmin, cmax, colorscale) for f in faces]
+    face_data = [make_face(ds.isel(time=0), f, var, cmin, cmax, cmid, colorscale) for f in faces]
     # make colorbar
     face_data[0].update(showscale=True)
     # set colorbar title
@@ -307,7 +307,7 @@ def cube_time_evol(ds, var, model_run="", colorscale="Viridis", grid = True, qua
     nt = len(ds["time"])
     for t in range(nt):
         dsi = ds.isel(time=t)
-        frame_data = [make_face(dsi, f, var, cmin, cmax, colorscale) for f in faces]
+        frame_data = [make_face(dsi, f, var, cmin, cmax, cmid, colorscale) for f in faces]
         frames.append(go.Frame(data=frame_data, name=str(t)))
 
     # CREATE FIGURE
