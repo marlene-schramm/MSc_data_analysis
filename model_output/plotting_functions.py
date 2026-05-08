@@ -59,8 +59,8 @@ def surface_animation(ds, var, model_run, time_dim, x_dim, y_dim, colorscale):
         title="Model Run " + model_run + "<br>Time Evolution of " + var,
         xaxis_title="XC",
         yaxis_title="YC",
-        width=1000,
-        height=700,
+        width=1500,
+        height=1200,
         margin=dict(l=50, r=50, t=60, b=80),
         updatemenus=[dict(
             type="buttons",
@@ -339,7 +339,7 @@ def cube_time_evol(ds, var, model_run="", colorscale="Viridis", grid = True, qua
             aspectmode="manual",
             aspectratio=dict(x=aspect_x, y=aspect_y, z=aspect_z)
         ),
-        width=850, height=750,
+        width=1500, height=1200,
         updatemenus=[dict(
             type="buttons",
             buttons=[dict(label="Play", method="animate", args=[None])]
