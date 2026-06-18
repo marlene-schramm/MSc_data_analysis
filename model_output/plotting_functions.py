@@ -88,7 +88,7 @@ def surface_animation(ds, var, model_run, time_dim, x_dim, y_dim, colorscale):
         )]  
     )
 
-    fig.show(renderer="browser")
+    return fig
 
 
 ### Functions for 3D block animation with Plotly
@@ -349,4 +349,4 @@ def cube_time_evol(ds, var, model_run="", colorscale="Viridis", grid = True, qua
                 for t in range(nt)]
         )]
     )
-    fig.show(renderer="browser")
+    return fig
