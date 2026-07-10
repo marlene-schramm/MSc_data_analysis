@@ -57,8 +57,8 @@ def surface_animation(ds, var, model_run, time_dim, x_dim, y_dim, colorscale):
 
     fig.update_layout(
         title="Model Run " + model_run + "<br>Time Evolution of " + var,
-        xaxis_title="XC",
-        yaxis_title="YC",
+        xaxis_title=x_dim,
+        yaxis_title=y_dim,
         width=1500,
         height=1200,
         margin=dict(l=50, r=50, t=60, b=80),
@@ -93,7 +93,7 @@ def surface_animation(ds, var, model_run, time_dim, x_dim, y_dim, colorscale):
 
 ### Functions for 3D block animation with Plotly
 
-def make_face(ds, face, var, cmin, cmax, cmid,colorscale="Viridis"):
+def make_face(ds, face, var, xdim, ydim, zdim, cmin, cmax, cmid, colorscale="Viridis"):
     """
     Create a Plotly surface for one cube face.
 
@@ -110,38 +110,38 @@ def make_face(ds, face, var, cmin, cmax, cmid,colorscale="Viridis"):
         Plotly colorscale to use for surfacecolor
     """
 
-    x = ds["XC"].values
-    y = ds["YC"].values
-    z = ds["Z"].values
+    x = ds[xdim].values
+    y = ds[ydim].values
+    z = ds[zdim].values
     V = ds[var]
 
     if face == "top":
-        face_values = V.isel(Z=0)
+        face_values = V.isel({zdim:0})
         x_face, y_face = np.meshgrid(x, y, indexing="xy")
         z_face = np.full_like(x_face, z[0])
 
     elif face == "bottom":
-        face_values = V.isel(Z=-1)
+        face_values = V.isel({zdim:-1})
         x_face, y_face = np.meshgrid(x, y, indexing="xy")
         z_face = np.full_like(x_face, z[-1])
 
     elif face == "front":
-        face_values = V.isel(YC=0)
+        face_values = V.isel({ydim:0})
         x_face, z_face = np.meshgrid(x, z, indexing="xy")
         y_face = np.full_like(x_face, y[0])
 
     elif face == "back":
-        face_values = V.isel(YC=-1)
+        face_values = V.isel({ydim:-1})
         x_face, z_face = np.meshgrid(x, z, indexing="xy")
         y_face = np.full_like(x_face, y[-1])
 
     elif face == "right":
-        face_values = V.isel(XC=-1)
+        face_values = V.isel({xdim:-1})
         y_face, z_face = np.meshgrid(y, z, indexing="xy")
         x_face = np.full_like(y_face, x[-1])
 
     elif face == "left":
-        face_values = V.isel(XC=0)
+        face_values = V.isel({xdim:0})
         y_face, z_face = np.meshgrid(y, z, indexing="xy")
         x_face = np.full_like(y_face, x[0])
 
@@ -149,9 +149,9 @@ def make_face(ds, face, var, cmin, cmax, cmid,colorscale="Viridis"):
         raise ValueError("Invalid face name")
     
     # grid lines
-    x_edges = grid_edges_from_centers(ds["XC"].values)
-    y_edges = grid_edges_from_centers(ds["YC"].values)
-    z_edges = grid_edges_from_centers(ds["Z"].values)
+    x_edges = grid_edges_from_centers(ds[xdim].values)
+    y_edges = grid_edges_from_centers(ds[ydim].values)
+    z_edges = grid_edges_from_centers(ds[zdim].values)
 
     return go.Surface(
         x=x_face,
@@ -186,7 +186,7 @@ def grid_edges_from_centers(c):
 
     return edges
 
-def add_model_grid_lines(fig, ds, faces=None, line_color="black", line_width=1):
+def add_model_grid_lines(fig, ds, xdim, ydim, zdim, faces=None, line_color="black", line_width=1):
     """
     Add grid lines along cube surfaces representing the model grid.
     """
@@ -195,19 +195,19 @@ def add_model_grid_lines(fig, ds, faces=None, line_color="black", line_width=1):
 
     # Compute cell edges
     edges = {
-        "XC": grid_edges_from_centers(ds["XC"].values),
-        "YC": grid_edges_from_centers(ds["YC"].values),
-        "Z":  grid_edges_from_centers(ds["Z"].values)
+        xdim: grid_edges_from_centers(ds[xdim].values),
+        ydim: grid_edges_from_centers(ds[ydim].values),
+        zdim:  grid_edges_from_centers(ds[zdim].values)
     }
 
     # Define fixed coordinate and the two varying axes for each face
     face_def = {
-        "top":    ("Z", edges["Z"][0], ["XC","YC"]),
-        "bottom": ("Z", edges["Z"][-1], ["XC","YC"]),
-        "front":  ("YC", edges["YC"][0], ["XC","Z"]),
-        "back":   ("YC", edges["YC"][-1], ["XC","Z"]),
-        "right":  ("XC", edges["XC"][-1], ["YC","Z"]),
-        "left":   ("XC", edges["XC"][0], ["YC","Z"])
+        "top":    (zdim, edges[zdim][0], [xdim,ydim]),
+        "bottom": (zdim, edges[zdim][-1], [xdim,ydim]),
+        "front":  (ydim, edges[ydim][0], [xdim,zdim]),
+        "back":   (ydim, edges[ydim][-1], [xdim,zdim]),
+        "right":  (xdim, edges[xdim][-1], [ydim,zdim]),
+        "left":   (xdim, edges[xdim][0], [ydim,zdim])
     }
 
     for face in faces:
@@ -221,9 +221,9 @@ def add_model_grid_lines(fig, ds, faces=None, line_color="black", line_width=1):
             coords_end[var_axes[0]] = edges[var_axes[0]][-1]  # end
 
             fig.add_trace(go.Scatter3d(
-                x=[coords["XC"], coords_end["XC"]],
-                y=[coords["YC"], coords_end["YC"]],
-                z=[coords["Z"], coords_end["Z"]],
+                x=[coords[xdim], coords_end[xdim]],
+                y=[coords[ydim], coords_end[ydim]],
+                z=[coords[zdim], coords_end[zdim]],
                 mode="lines",
                 line=dict(color=line_color, width=line_width),
                 showlegend=False
@@ -238,9 +238,9 @@ def add_model_grid_lines(fig, ds, faces=None, line_color="black", line_width=1):
             coords_end[var_axes[1]] = edges[var_axes[1]][-1]  # end
 
             fig.add_trace(go.Scatter3d(
-                x=[coords["XC"], coords_end["XC"]],
-                y=[coords["YC"], coords_end["YC"]],
-                z=[coords["Z"], coords_end["Z"]],
+                x=[coords[xdim], coords_end[xdim]],
+                y=[coords[ydim], coords_end[ydim]],
+                z=[coords[zdim], coords_end[zdim]],
                 mode="lines",
                 line=dict(color=line_color, width=line_width),
                 showlegend=False
@@ -248,7 +248,7 @@ def add_model_grid_lines(fig, ds, faces=None, line_color="black", line_width=1):
 
     return fig
 
-def cube_time_evol(ds, var, model_run="", colorscale="Viridis", grid = True, quarter=False):
+def cube_time_evol(ds, var, xdim ="XC", ydim="YC",zdim="Z",model_run="", colorscale="Viridis", grid = True, quarter=False):
     """
     Create a 3D cube plot with time evolution for a given variable using Plotly (animated surface plot).
 
@@ -296,7 +296,7 @@ def cube_time_evol(ds, var, model_run="", colorscale="Viridis", grid = True, qua
 
     # FIRST FRAME
     # For timestep 0, create surfaces for all faces
-    face_data = [make_face(ds.isel(time=0), f, var, cmin, cmax, cmid, colorscale) for f in faces]
+    face_data = [make_face(ds.isel(time=0), f, var, xdim, ydim, zdim, cmin, cmax, cmid, colorscale) for f in faces]
     # make colorbar
     face_data[0].update(showscale=True)
     # set colorbar title
@@ -307,20 +307,20 @@ def cube_time_evol(ds, var, model_run="", colorscale="Viridis", grid = True, qua
     nt = len(ds["time"])
     for t in range(nt):
         dsi = ds.isel(time=t)
-        frame_data = [make_face(dsi, f, var, cmin, cmax, cmid, colorscale) for f in faces]
+        frame_data = [make_face(dsi, f, var, xdim, ydim, zdim, cmin, cmax, cmid, colorscale) for f in faces]
         frames.append(go.Frame(data=frame_data, name=str(t)))
 
     # CREATE FIGURE
     fig = go.Figure(data=face_data, frames=frames)
 
     if grid == True:
-        fig = add_model_grid_lines(fig, ds.isel(time=0), faces=faces, line_color="darkgrey", line_width=1)
+        fig = add_model_grid_lines(fig, ds.isel(time=0), xdim=xdim, ydim=ydim, zdim=zdim, faces=faces, line_color="darkgrey", line_width=1)
     
     ## LAYOUT
     # Calculate axis spect ratios based on data ranges
-    x_range = np.ptp(ds["XC"].values)  # peak-to-peak (max - min)
-    y_range = np.ptp(ds["YC"].values)
-    z_range = np.ptp(ds["Z"].values)
+    x_range = np.ptp(ds[xdim].values)  # peak-to-peak (max - min)
+    y_range = np.ptp(ds[ydim].values)
+    z_range = np.ptp(ds[zdim].values)
 
     # Set aspect ratios relative to the smallest range z
     if z_range > 0:
@@ -333,8 +333,8 @@ def cube_time_evol(ds, var, model_run="", colorscale="Viridis", grid = True, qua
     fig.update_layout(
         title="Model Run " + model_run + "<br>Time Evolution of " + var + "<br>" + title_suffix,
         scene=dict(
-            xaxis=dict(title="XC"),
-            yaxis=dict(title="YC"),
+            xaxis=dict(title=xdim),
+            yaxis=dict(title=ydim),
             zaxis=dict(title="Z [m]"),
             aspectmode="manual",
             aspectratio=dict(x=aspect_x, y=aspect_y, z=aspect_z)
